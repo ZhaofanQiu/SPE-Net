@@ -1,0 +1,88 @@
+DATASET:
+  NAME: 'PartNetSeg'
+
+DATALOADER:
+  TRAIN_BATCH_SIZE: 8
+  TEST_BATCH_SIZE: 8
+  NUM_WORKERS: 4
+  DATA_ROOT: './dataset'
+  NUM_PARTS: [15, 9, 39, 11, 7, 4, 5, 10, 12, 10, 41, 6, 7, 24, 51, 11, 6]
+
+AUG:
+  SCALE_LOW: 0.8
+  SCALE_HIGH: 1.2
+  NOISE_STD: 0.001
+  NOISE_CLIP: 0.05
+  TRANSLATE_RANGE: 0.0
+  X_ANGLE_RANGE: 0.0
+  Y_ANGLE_RANGE: 0.0
+  Z_ANGLE_RANGE: 0.0
+  NUM_VOTES: 1
+  TEST_ROTATE: False
+
+ENGINE:
+  NAME: 'DefaultTrainer'
+  BEST_METRICS: ['mmpIoU']
+  FP16: True
+
+MODEL:
+  META_ARCHITECTURE: 'SegNet'
+  INFEATS_DIM: 3
+  NUM_CLASSES: 17
+  DROP_PATH: 0.1
+
+  STEM:
+    NAME: 'ConvStem'
+    WIDTH: 72
+
+  BACKBONE:
+    NAME: 'ResNet'
+    LAYERS: [1, 2, 2, 2, 2]
+    DIMS: [144, 288, 576, 1152, 2304]
+    BTNK_RATIOS: [2, 2, 2, 2, 2]
+    NPOINTS: [-1, 5120, 1024, 384, 64 ]
+    NSAMPLES: [ 23, 38, 42, 40, 36 ]
+    RADIUS: 0.05
+    SAMPLEDL: 0.02
+
+  LA_TYPE:
+    NAME: 'SPEMLP'
+    FEAT_TYPE: 'pool,n'
+    NUM_MLPS: 1
+    REDUCTION: 'top3'
+
+  DOWN_SAMPLER:
+    NAME: 'MaxPoolDS'
+
+  HEAD:
+    NAME: 'MultiPartSegHead'
+
+  GLOBAL_POOLER:
+    NAME: 'GlobalMaxPooler'
+ 
+SOLVER:
+  NAME: 'AdamW'
+  EPOCH: 300
+  CHECKPOINT_PERIOD: 1
+  EVAL_PERIOD: 5
+  VOTE_START: 250
+  DENSE_EVAL_EPOCH: 250
+  BASE_LR: 0.00125
+  WEIGHT_DECAY: 0.001
+  WEIGHT_DECAY_NORM: 0.001
+  MOMENTUM: 0.98
+  ALPHA: 0.99
+  BETAS: [0.9, 0.999]
+  WRITE_PERIOD: 20
+  AUTO_LR: False
+
+LR_SCHEDULER:
+  NAME: 'StepLR'
+  STEP_SIZE: 90
+  GAMMA: 0.1
+
+LOSSES:
+  NAMES: ['MultiShapeCrossEntropy']
+
+INFERENCE:
+  NAME: 'SegEvaluator'
